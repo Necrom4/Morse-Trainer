@@ -21,6 +21,7 @@ python3 main.py
 ## TODO
 
 - [ ] Start Menu
+- [ ] Display Table
 - [ ] Modes
   - [X] Morse interpreter
   - [ ] Listen and translate

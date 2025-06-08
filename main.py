@@ -100,8 +100,26 @@ def decode_loop():
 
         time.sleep(DIT_DURATION)
 
-# --- Start decoder thread ---
-threading.Thread(target=decode_loop, daemon=True).start()
+# --- Print A-Z table
+def print_table():
+    print(" ", end='')
+    print("_" * (10 * 4 - 1))
+    items = list(MORSE_CODE.items())
+    items.sort(key=lambda x: x[1])  # Sort by letter
+
+    for i in range(0, len(items), 4):
+        row = items[i:i+4]
+        line = "| "
+        for code, letter in row:
+            line += f"{letter}: {code:<4} | "
+        print(line)
+    print(" ", end='')
+    print("_" * (10 * 4 - 1))
+
+if __name__ == "__main__":
+    print_table()
+    print("\nInput: ", end='')
+    threading.Thread(target=decode_loop, daemon=True).start()
 
 # --- Start listener ---
 with Listener(on_press=on_press, on_release=on_release, suppress=True) as listener:
