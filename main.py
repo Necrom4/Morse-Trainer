@@ -183,7 +183,30 @@ def normilize_txt(file):
 
     return normalized
 
-# def play_txt(text):
+# --- Play text ---
+def play_txt(text):
+    global DIT_DURATION, DAH_DURATION
+
+    for char in text:
+        if char == '/':
+            time.sleep(WORD_SPACE_DURATION)
+            continue
+
+        morse = next((k for k, v in MORSE_CODE.items() if v == char), None)
+        if not morse: # Skip unknown characters
+            continue
+
+        for symbol in morse:
+            if symbol == '.':
+                beep_sound.play()
+                time.sleep(DIT_DURATION)
+                beep_sound.stop()
+            elif symbol == '-':
+                beep_sound.play()
+                time.sleep(DAH_DURATION)
+                beep_sound.stop()
+            time.sleep(INTRA_CHARACTER_SPACE_DURATION)
+        time.sleep(INTER_CHARACTER_SPACE_DURATION - INTRA_CHARACTER_SPACE_DURATION)
 
 # --- Live translation ---
 def mode_1():
@@ -201,8 +224,7 @@ def mode_2():
             print("[ERROR] '" + file + "' does not exist.")
     print_table()
     normalized_txt = normilize_txt(file)
-    print(normalized_txt)
-    # play_txt(normalized_txt)
+    play_txt(normalized_txt)
 
 if __name__ == "__main__":
     mode = menu()
