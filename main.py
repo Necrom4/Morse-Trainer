@@ -1,9 +1,11 @@
-from pynput.keyboard import Key, Listener
 import os
-os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
-import pygame
+import re
+import string
 import time
 import threading
+from pynput.keyboard import Key, Listener
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
+import pygame
 
 # --- Morse timing constants ---
 DIT_LENGTH = 1
@@ -66,6 +68,44 @@ def update_durations():
     INTER_CHARACTER_SPACE_DURATION = INTER_CHARACTER_SPACE_LENGTH * DIT_DURATION
     WORD_SPACE_DURATION = WORD_SPACE_LENGTH * DIT_DURATION
 
+def menu():
+    mode = None
+    print("Choose a mode:")
+    print("1 - Live Translator")
+    print("2 - Trainer")
+    while True:
+        mode = input("Enter 1 or 2: ").strip()
+        if mode in ('1', '2'):
+            return int(mode)
+        print("Invalid choice. Please enter 1 or 2.")
+
+# --- Print A-Z table
+def print_table():
+    print("╭", end='')
+    for x in range(4):
+        print("─" * 9 + "┬", end='')
+    print("\b╮")
+    items = list(MORSE_CODE.items())
+    items.sort(key=lambda x: x[1])  # Sort by letter
+
+    for i in range(0, len(items), 4):
+        row = items[i:i+4]
+        line = "│ "
+        for code, letter in row:
+            line += f"{letter}: {code:<4} │ "
+        if len(row) < 4:
+            line += "\b" + ((" " * 9) + "│") * 2
+        print(line)
+    print("╰", end='')
+    for x in range(4):
+        print("─" * 9 + "┴", end='')
+    print("\b╯")
+
+def print_speed():
+    while True:
+        print(f"\rSpeed: {DIT_DURATION:.2f} | Output: {output_buffer}", end='', flush=True)
+        time.sleep(0.1)
+
 # --- Handle key press ---
 def on_press(key):
     global press_time, last_release_time, output_buffer, DIT_DURATION
@@ -127,38 +167,50 @@ def decode_loop():
 
         time.sleep(0.1)
 
-# --- Print A-Z table
-def print_table():
-    print("╭", end='')
-    for x in range(4):
-        print("─" * 9 + "┬", end='')
-    print("\b╮")
-    items = list(MORSE_CODE.items())
-    items.sort(key=lambda x: x[1])  # Sort by letter
+# --- Make text file readable ---
+def normilize_txt(file):
+    with open(file, 'r', encoding='utf-8') as f:
+        text = f.read()
 
-    for i in range(0, len(items), 4):
-        row = items[i:i+4]
-        line = "│ "
-        for code, letter in row:
-            line += f"{letter}: {code:<4} │ "
-        if len(row) < 4:
-            line += "\b" + ((" " * 9) + "│") * 2
-        print(line)
-    print("╰", end='')
-    for x in range(4):
-        print("─" * 9 + "┴", end='')
-    print("\b╯")
+    # Convert to uppercase
+    text = text.upper()
 
-def print_speed():
-    while True:
-        print(f"\rSpeed: {DIT_DURATION:.2f} | Output: {output_buffer}", end='', flush=True)
-        time.sleep(0.1)
+    # Replace all non-letter characters with slashes
+    text = ''.join(char if char in string.ascii_uppercase else '/' for char in text)
 
-if __name__ == "__main__":
+    # Collapse multiple slashes into a single slash
+    normalized = re.sub(r'/+', '/', text)
+
+    return normalized
+
+# def play_txt(text):
+
+# --- Live translation ---
+def mode_1():
     print_table()
     threading.Thread(target=print_speed, daemon=True).start()
     threading.Thread(target=decode_loop, daemon=True).start()
 
-# --- Start listener ---
-with Listener(on_press=on_press, on_release=on_release, suppress=True) as listener:
-    listener.join()
+# --- Train translating Morse code from a text file ---
+def mode_2():
+    while True:
+        file = input("Enter filename: ").strip()
+        if os.path.exists(file):
+            break
+        else:
+            print("[ERROR] '" + file + "' does not exist.")
+    print_table()
+    normalized_txt = normilize_txt(file)
+    print(normalized_txt)
+    # play_txt(normalized_txt)
+
+if __name__ == "__main__":
+    mode = menu()
+    if int(mode) == 1:
+        mode_1()
+    else:
+        mode_2()
+
+    # --- Start listener ---
+    with Listener(on_press=on_press, on_release=on_release, suppress=True) as listener:
+        listener.join()
