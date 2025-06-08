@@ -80,6 +80,10 @@ def on_press(key):
             if idle_time >= WORD_SPACE_DURATION:
                 output_buffer += '/'
         last_release_time = None
+    if key == Key.enter:
+        print("\n")
+        last_release_time = None
+        output_buffer = ''
 
 # --- Handle key release ---
 def on_release(key):
