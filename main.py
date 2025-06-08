@@ -1,5 +1,7 @@
 from pynput.keyboard import Key, Listener
-import math
+import os
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
+import pygame
 import time
 import threading
 
@@ -46,6 +48,10 @@ MORSE_CODE = {
     '--..': 'Z',
 }
 
+# Initialize pygame mixer
+pygame.mixer.init()
+beep_sound = pygame.mixer.Sound("beep.wav")
+
 # --- State variables ---
 press_time = None
 last_release_time = None
@@ -74,6 +80,7 @@ def on_press(key):
         # print(f"Speed: {DIT_DURATION:.2f}") # for non static Speed print
     if key == Key.space:
         press_time = time.time()
+        beep_sound.play(-1)  # loop indefinitely
         if last_release_time:
             idle_time = time.time() - last_release_time
 
@@ -94,6 +101,7 @@ def on_release(key):
 
     if key == Key.space and press_time:
         release_time = time.time()
+        beep_sound.stop()
         pressed_time = release_time - press_time
         press_time = None
         last_release_time = release_time

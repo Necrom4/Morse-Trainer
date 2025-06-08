@@ -25,4 +25,4 @@ python3 main.py
 - [ ] Modes
   - [X] Morse interpreter
   - [ ] Listen and translate
-- [ ] Add sound effect
+- [X] Add sound effect
