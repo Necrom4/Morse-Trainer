@@ -8,7 +8,7 @@ DIT_LENGTH = 1
 DAH_LENGTH = 3
 INTRA_CHARACTER_SPACE_LENGTH = 1
 INTER_CHARACTER_SPACE_LENGTH = 3
-WORD_SPACE_LENGTH = 10
+WORD_SPACE_LENGTH = 14
 
 DIT_DURATION = 0.05  # base unit in seconds
 DAH_DURATION = DAH_LENGTH * DIT_DURATION
@@ -121,19 +121,25 @@ def decode_loop():
 
 # --- Print A-Z table
 def print_table():
-    print(" ", end='')
-    print("_" * (10 * 4 - 1))
+    print("╭", end='')
+    for x in range(4):
+        print("─" * 9 + "┬", end='')
+    print("\b╮")
     items = list(MORSE_CODE.items())
     items.sort(key=lambda x: x[1])  # Sort by letter
 
     for i in range(0, len(items), 4):
         row = items[i:i+4]
-        line = "| "
+        line = "│ "
         for code, letter in row:
-            line += f"{letter}: {code:<4} | "
+            line += f"{letter}: {code:<4} │ "
+        if len(row) < 4:
+            line += "\b" + ((" " * 9) + "│") * 2
         print(line)
-    print(" ", end='')
-    print("_" * (10 * 4 - 1))
+    print("╰", end='')
+    for x in range(4):
+        print("─" * 9 + "┴", end='')
+    print("\b╯")
 
 def print_speed():
     while True:
