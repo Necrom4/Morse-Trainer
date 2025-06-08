@@ -1,4 +1,5 @@
 from pynput.keyboard import Key, Listener
+import math
 import time
 import threading
 
@@ -52,16 +53,33 @@ last_release_time = None
 morse_sequence = ''
 output_buffer = ''
 
+def update_durations():
+    global DIT_DURATION, DAH_DURATION, INTRA_CHARACTER_SPACE_DURATION, INTER_CHARACTER_SPACE_DURATION, WORD_SPACE_DURATION, OFFSET_DURATION
+
+    DAH_DURATION = DAH_LENGTH * DIT_DURATION
+    INTRA_CHARACTER_SPACE_DURATION = INTRA_CHARACTER_SPACE_LENGTH * DIT_DURATION
+    INTER_CHARACTER_SPACE_DURATION = INTER_CHARACTER_SPACE_LENGTH * DIT_DURATION
+    WORD_SPACE_DURATION = WORD_SPACE_LENGTH * DIT_DURATION
+    OFFSET_DURATION = DIT_DURATION
+
 # --- Handle key press ---
 def on_press(key):
-    global press_time, last_release_time
+    global press_time, last_release_time, output_buffer, DIT_DURATION
+    if key == Key.up:
+        DIT_DURATION += 0.01
+        update_durations()
+        # print(f"Speed: {DIT_DURATION:.2f}") # for non static Speed print
+    if key == Key.down and DIT_DURATION > 0.01:
+        DIT_DURATION -= 0.01
+        update_durations()
+        # print(f"Speed: {DIT_DURATION:.2f}") # for non static Speed print
     if key == Key.space:
         press_time = time.time()
         if last_release_time:
             idle_time = time.time() - last_release_time
 
             if idle_time >= WORD_SPACE_DURATION:
-                print('/', end='', flush=True)
+                output_buffer += '/'
         last_release_time = None
 
 # --- Handle key release ---
@@ -76,8 +94,6 @@ def on_release(key):
         pressed_time = release_time - press_time
         press_time = None
         last_release_time = release_time
-
-        # Round to nearest dit unit
 
         if pressed_time < DAH_DURATION - OFFSET_DURATION:
             morse_sequence += '.'
@@ -95,10 +111,10 @@ def decode_loop():
             if idle_time >= INTER_CHARACTER_SPACE_DURATION:
                 if morse_sequence:
                     decoded_char = MORSE_CODE.get(morse_sequence, '?')
-                    print(decoded_char, end='', flush=True)
+                    output_buffer += decoded_char  # update buffer instead of printing
                     morse_sequence = ''
 
-        time.sleep(DIT_DURATION)
+        time.sleep(0.1)
 
 # --- Print A-Z table
 def print_table():
@@ -116,9 +132,14 @@ def print_table():
     print(" ", end='')
     print("_" * (10 * 4 - 1))
 
+def print_speed():
+    while True:
+        print(f"\rSpeed: {DIT_DURATION:.2f} | Output: {output_buffer}", end='', flush=True)
+        time.sleep(0.1)
+
 if __name__ == "__main__":
     print_table()
-    print("\nInput: ", end='')
+    threading.Thread(target=print_speed, daemon=True).start()
     threading.Thread(target=decode_loop, daemon=True).start()
 
 # --- Start listener ---
