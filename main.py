@@ -3,9 +3,12 @@ import re
 import string
 import time
 import threading
+from threading import Event
 from pynput.keyboard import Key, Listener
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 import pygame
+
+MODE = None
 
 # --- Morse timing constants ---
 DIT_LENGTH = 1
@@ -50,7 +53,10 @@ MORSE_CODE = {
     '--..': 'Z',
 }
 
-# Initialize pygame mixer
+# --- Thread variables ---
+playback_done = Event()
+
+# --- Pygame variables ---
 pygame.mixer.init()
 beep_sound = pygame.mixer.Sound("beep.wav")
 
@@ -71,8 +77,8 @@ def update_durations():
 def menu():
     mode = None
     print("Choose a mode:")
-    print("1 - Live Translator")
-    print("2 - Trainer")
+    print("[1] - Live Translator")
+    print("[2] - Train translating text")
     while True:
         mode = input("Enter 1 or 2: ").strip()
         if mode in ('1', '2'):
@@ -110,6 +116,8 @@ def print_speed():
 def on_press(key):
     global press_time, last_release_time, output_buffer, DIT_DURATION
 
+    if key == Key.esc:
+        return os._exit(0)
     if key == Key.up:
         DIT_DURATION += 0.01
         update_durations()
@@ -118,26 +126,33 @@ def on_press(key):
         DIT_DURATION -= 0.01
         update_durations()
         # print(f"Speed: {DIT_DURATION:.2f}") # for non static Speed print
-    if key == Key.space:
-        press_time = time.time()
-        beep_sound.play(-1)  # loop indefinitely
-        if last_release_time:
-            idle_time = time.time() - last_release_time
+    if MODE == 1:
+        if key == Key.space:
+            press_time = time.time()
+            beep_sound.play(-1)  # loop indefinitely
+            if last_release_time:
+                idle_time = time.time() - last_release_time
 
-            if idle_time >= WORD_SPACE_DURATION:
-                output_buffer += '/'
-        last_release_time = None
-    if key == Key.enter:
-        print("\n")
-        last_release_time = None
-        output_buffer = ''
+                if idle_time >= WORD_SPACE_DURATION:
+                    output_buffer += '/'
+            last_release_time = None
+        if key == Key.enter:
+            print("\n")
+            last_release_time = None
+            output_buffer = ''
+    else:
+        if key == Key.space:
+            output_buffer += '/'  # Interpret space as '/'
+        if key == Key.backspace:
+            output_buffer = output_buffer[:-1]
+        elif hasattr(key, 'char') and key.char:
+            c = key.char.upper()
+            if c in string.ascii_uppercase:
+                output_buffer += c
 
 # --- Handle key release ---
 def on_release(key):
     global press_time, last_release_time, morse_sequence
-
-    if key == Key.esc:
-        return False  # stop listener
 
     if key == Key.space and press_time:
         release_time = time.time()
@@ -181,12 +196,16 @@ def normilize_txt(file):
     # Collapse multiple slashes into a single slash
     normalized = re.sub(r'/+', '/', text)
 
+    # Remove trailing slashes
+    normalized = normalized.rstrip('/')
+
     return normalized
 
 # --- Play text ---
 def play_txt(text):
     global DIT_DURATION, DAH_DURATION
 
+    playback_done.clear()
     for char in text:
         if char == '/':
             time.sleep(WORD_SPACE_DURATION)
@@ -208,6 +227,23 @@ def play_txt(text):
             time.sleep(INTRA_CHARACTER_SPACE_DURATION)
         time.sleep(INTER_CHARACTER_SPACE_DURATION - INTRA_CHARACTER_SPACE_DURATION)
 
+    playback_done.set()
+
+def compare_txt(normalized_txt):
+    global output_buffer
+
+    playback_done.wait()
+    print("")
+    if output_buffer == normalized_txt:
+        print("[SUCCESS]")
+    else:
+        print("[ERROR] Your input does not match.\n")
+        print("--- INPUT ---")
+        print(output_buffer)
+        print("--- EXCEPTED ---")
+        print(normalized_txt)
+    os._exit(0) # Immediate exit, bypass lingering listener
+
 # --- Live translation ---
 def mode_1():
     print_table()
@@ -224,11 +260,15 @@ def mode_2():
             print("[ERROR] '" + file + "' does not exist.")
     print_table()
     normalized_txt = normilize_txt(file)
-    play_txt(normalized_txt)
+    threading.Thread(target=print_speed, daemon=True).start()
+    time.sleep(3) # wait time before start
+
+    threading.Thread(target=play_txt, args=(normalized_txt,), daemon=True).start()
+    threading.Thread(target=compare_txt, args=(normalized_txt,), daemon=True).start()
 
 if __name__ == "__main__":
-    mode = menu()
-    if int(mode) == 1:
+    MODE = int(menu())
+    if MODE == 1:
         mode_1()
     else:
         mode_2()
