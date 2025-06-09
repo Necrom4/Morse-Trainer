@@ -18,11 +18,16 @@ Launch program:
 python3 main.py
 ```
 
+Choose mode:
+
+1. Live Morse Interpreter
+2. Translate Text Training
+
 ## TODO
 
 - [ ] Start Menu
 - [X] Display Table
 - [ ] Modes
-  - [X] Morse interpreter
-  - [ ] Listen and translate
+  - [X] Live Morse Interpreter
+  - [X] Listen and translate
 - [X] Add sound effect

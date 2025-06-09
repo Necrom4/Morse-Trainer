@@ -77,8 +77,8 @@ def update_durations():
 def menu():
     mode = None
     print("Choose a mode:")
-    print("[1] - Live Translator")
-    print("[2] - Train translating text")
+    print("[1] - Live Morse Interpreter")
+    print("[2] - Translate Text Training")
     while True:
         mode = input("Enter 1 or 2: ").strip()
         if mode in ('1', '2'):
