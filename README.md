@@ -30,4 +30,5 @@ Choose mode:
 - [ ] Modes
   - [X] Live Morse Interpreter
   - [X] Listen and translate
+  - [ ] Alphabet training
 - [X] Add sound effect
