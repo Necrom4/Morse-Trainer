@@ -87,25 +87,25 @@ def menu():
 
 # --- Print A-Z table
 def print_table():
-    print("╭", end='')
-    for x in range(4):
-        print("─" * 9 + "┬", end='')
-    print("\b╮")
     items = list(MORSE_CODE.items())
-    items.sort(key=lambda x: x[1])  # Sort by letter
+    items.sort(key=lambda x: x[1])
 
-    for i in range(0, len(items), 4):
-        row = items[i:i+4]
-        line = "│ "
-        for code, letter in row:
-            line += f"{letter}: {code:<4} │ "
-        if len(row) < 4:
-            line += "\b" + ((" " * 9) + "│") * 2
-        print(line)
-    print("╰", end='')
-    for x in range(4):
-        print("─" * 9 + "┴", end='')
-    print("\b╯")
+    # Split into two vertical columns
+    half = (len(items) + 1) // 2
+    col1 = items[:half]
+    col2 = items[half:]
+
+    # Top border
+    print("╭" + "─" * 9 + "┬" + "─" * 9 + "╮")
+
+    # Rows
+    for i in range(half):
+        left = f"{col1[i][1]}: {col1[i][0]:<4}" if i < len(col1) else " " * 11
+        right = f"{col2[i][1]}: {col2[i][0]:<4}" if i < len(col2) else " " * 11
+        print(f"│ {left} │ {right} │")
+
+    # Bottom border
+    print("╰" + "─" * 9 + "┴" + "─" * 9 + "╯")
 
 def print_speed():
     while True:
